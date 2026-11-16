@@ -1,3 +1,4 @@
+
 # Helpdesk — Sistema de Gestão de Chamados
 
 Sistema web completo de Helpdesk para abertura, acompanhamento e resolução de chamados internos, composto por um **frontend React** e um **backend Django REST Framework**. O projeto implementa o MVP completo com autenticação, perfis distintos, quadro Kanban com drag and drop, fluxo colaborativo de resolução (técnico propõe, solicitante confirma) e auditoria imutável.
@@ -7,10 +8,10 @@ Sistema web completo de Helpdesk para abertura, acompanhamento e resolução de 
 ## Sumário
 
 - [Visão geral](#visão-geral)
-- [Arquitetura](#arquitetura)
-- [Stack](#stack)
+- [Arquitetura do sistema](#arquitetura-do-sistema)
+- [Stack tecnológica](#stack-tecnológica)
 - [Estrutura do repositório](#estrutura-do-repositório)
-- [Como rodar](#como-rodar)
+- [Como rodar o projeto](#como-rodar-o-projeto)
 - [Usuários de demonstração](#usuários-de-demonstração)
 - [Fluxo de uso](#fluxo-de-uso)
 - [Fluxo de status do chamado](#fluxo-de-status-do-chamado)
@@ -23,33 +24,39 @@ Sistema web completo de Helpdesk para abertura, acompanhamento e resolução de 
 
 ## Visão geral
 
-O sistema tem dois perfis:
+O Helpdesk permite que **solicitantes** abram chamados e que **técnicos** os assumam, acompanhem e resolvam. O diferencial do MVP é o **fluxo colaborativo de resolução**: o técnico não encerra o chamado sozinho — ele propõe uma solução e o solicitante proprietário precisa confirmar (ou rejeitar) para que o chamado seja encerrado.
 
-- **Solicitante** — abre chamados e acompanha os seus. Pode confirmar ou rejeitar a solução proposta pelo técnico.
-- **Técnico** — vê a fila de chamados, assume, define a urgência, move no Kanban, comenta internamente e propõe a solução.
+Principais características:
 
-A autenticação usa sessão do Django com CSRF. Não há JWT nem token em `localStorage`. O papel do usuário vem do backend (`GET /auth/me/`), nunca de algo editável no frontend.
-
-O frontend também tem um modo demonstração que roda sem o backend, com dados fictícios em `sessionStorage`. Útil para mostrar a interface sem subir o Django.
+- Autenticação por **sessão + CSRF** (sem JWT, sem token em `localStorage`).
+- Dois perfis: `SOLICITANTE` e `TECNICO`.
+- Abertura de chamados compartilhada entre os perfis.
+- Atribuição atômica com definição obrigatória de urgência.
+- Kanban com **drag and drop acessível** (pointer e teclado).
+- Confirmação/rejeição da solução pelo solicitante.
+- Comentários internos (apenas técnicos).
+- Histórico de auditoria imutável.
+- Modo demonstração no frontend para rodar sem backend.
 
 ---
 
-## Arquitetura
+## Arquitetura do sistema
 
 O projeto é dividido em dois subprojetos independentes que se comunicam via HTTP:
 
-- **FrontEnd/** — aplicação React com Vite. Consome a API e renderiza a interface. Em modo demonstração, usa um backend simulado em `sessionStorage` e não faz chamadas reais.
-- **BackEnd/** — API REST em Django + DRF. Autenticação por sessão e CSRF, regras de negócio em `services.py`, banco PostgreSQL (SQLite em dev).
+- **FrontEnd/** — aplicação React (Vite) que consome a API e renderiza a interface. Em modo demonstração (`VITE_DEMO_MODE=true`), usa um backend simulado em `sessionStorage` e não faz chamadas reais.
+- **BackEnd/** — API REST em Django + DRF, com autenticação por sessão e CSRF, regras de negócio centralizadas em `services.py` e banco PostgreSQL (SQLite em dev).
 
 O frontend envia o cookie de sessão e o header `X-CSRFToken` em todas as requisições autenticadas. O backend é a autoridade final de autorização e validação; o frontend apenas reflete as regras na interface.
 
 ---
 
-## Stack
+## Stack tecnológica
 
-**Frontend:** React 18, Vite 6, React Router 6, Axios, React Hook Form, `@dnd-kit/core`, Lucide React, CSS puro, Vitest + React Testing Library.
-
-**Backend:** Python 3.12, Django 5.2, Django REST Framework 3.16, PostgreSQL (SQLite em dev), `django-filter`, `drf-spectacular`, `django-cors-headers`, `python-dotenv`, pytest + pytest-django, Ruff.
+| Camada | Principais tecnologias |
+|---|---|
+| Frontend | React 18, Vite 6, React Router 6, Axios, React Hook Form, `@dnd-kit/core`, Lucide React, CSS puro, Vitest + React Testing Library |
+| Backend | Python 3.12, Django 5.2, Django REST Framework 3.16, PostgreSQL/SQLite, `django-filter`, `drf-spectacular`, `django-cors-headers`, `python-dotenv`, pytest + pytest-django, Ruff |
 
 Detalhes completos em cada README específico.
 
@@ -61,66 +68,86 @@ Detalhes completos em cada README específico.
 .
 ├── FrontEnd/     # Aplicação React + Vite
 ├── BackEnd/      # API Django REST Framework
-└── README.md
-Como rodar
-Pré-requisitos: Node.js 18+, npm 9+, Python 3.12+. PostgreSQL é opcional — SQLite funciona para rodar localmente.
+└── README.md     # Este arquivo
+```
 
-Backend
-bash
+Cada subprojeto tem seu próprio README com stack, configuração, contrato de API, testes e limitações.
+
+---
+
+## Como rodar o projeto
+
+### Pré-requisitos
+
+- **Node.js 18+** e **npm 9+** (frontend)
+- **Python 3.12+** e **pip** (backend)
+- **PostgreSQL 14+** (opcional; SQLite funciona para execução local)
+
+### 1. Backend
+
+```bash
 cd BackEnd
 python -m venv .venv
 source .venv/bin/activate          # Linux/macOS
 # .\.venv\Scripts\Activate.ps1     # Windows PowerShell
 
 pip install -r requirements.txt
-cp .env.example .env
+cp .env.example .env               # ajuste se necessário
 python manage.py migrate
 python manage.py create_technician --username carlos.lima --email carlos.lima@empresa.com
-python manage.py seed_demo
+python manage.py seed_demo         # dados fictícios opcionais
 python manage.py runserver
-API em 
-http://localhost:8000/api/
-. Swagger em http://localhost:8000/api/docs/.
+```
 
-Frontend
-bash
+API em `http://localhost:8000/api/` · Swagger em `http://localhost:8000/api/docs/`
+
+### 2. Frontend
+
+```bash
 cd FrontEnd
 npm install
-cp .env.example .env    # VITE_DEMO_MODE=false para usar o backend real
+cp .env.example .env               # VITE_DEMO_MODE=false para usar o backend real
 npm run dev
-Aplicação em http://localhost:5173.
+```
 
-Só o frontend (modo demonstração)
-Se não quiser subir o Django, mantenha VITE_DEMO_MODE=true no .env do frontend. A interface roda com dados fictícios em memória e mostra o selo "Modo demonstração" no cabeçalho.
+Aplicação em `http://localhost:5173`
 
-Usuários de demonstração
-Criados pelo seed_demo no backend (ou disponíveis no modo demonstração do frontend):
+### 3. Alternativa: modo demonstração
 
-Perfil	Usuário	Senha
-Solicitante	ana.souza / ana.souza@demo.local	demo1234
-Solicitante	joao.pereira	
-demo1234
-Técnico	
-carlos.lima
-demo1234
-Técnico	marina.alves	demo1234
-O login aceita username ou e-mail no campo username.
+Se não quiser subir o Django, basta manter `VITE_DEMO_MODE=true` no `.env` do frontend. A interface roda com dados fictícios em memória, e o selo **“Modo demonstração”** aparece no cabeçalho.
 
-Fluxo de uso
-Roteiro para entender o sistema de ponta a ponta:
+---
 
-Entre como Ana (solicitante), abra um chamado e acompanhe em "Meus chamados".
+## Usuários de demonstração
 
-Saia e entre como Carlos (técnico). Assuma o chamado pelo Kanban definindo a urgência.
+Criados pelo comando `python manage.py seed_demo` no backend (ou disponíveis no modo demonstração do frontend):
 
-Ainda como Carlos, registre um comentário interno e use "Solicitar confirmação" com a solução proposta.
+| Perfil | Usuário | Senha |
+|---|---|---|
+| Solicitante | `ana.souza` / `ana.souza@demo.local` | `demo1234` |
+| Solicitante | `joao.pereira` | `demo1234` |
+| Técnico | `carlos.lima` | `demo1234` |
+| Técnico | `marina.alves` | `demo1234` |
 
-Volte como Ana, abra o chamado pendente e confirme a resolução. O status vai para RESOLVIDO.
+> O login aceita username **ou** e-mail no campo `username`.
 
-Repita o fluxo rejeitando a solução para ver o chamado voltar para EM_ATENDIMENTO, mantendo o técnico responsável.
+---
 
-Fluxo de status do chamado
-text
+## Fluxo de uso
+
+Roteiro sugerido para entender o sistema de ponta a ponta:
+
+1. **Como Ana (solicitante):** abra um chamado e acompanhe em “Meus chamados”.
+2. **Como Carlos (técnico):** assuma o chamado pelo Kanban definindo a urgência.
+3. Ainda como Carlos: registre um comentário interno e use **“Solicitar confirmação”** descrevendo a solução proposta.
+4. **Como Ana:** abra o chamado pendente e **confirme a resolução** → status `RESOLVIDO`.
+5. Repita o fluxo **rejeitando** a solução para ver o chamado voltar a `EM_ATENDIMENTO` mantendo o técnico responsável.
+
+---
+
+## Fluxo de status do chamado
+
+```text
 ABERTO
   └── assign (urgência obrigatória) ──▶ EM_ATENDIMENTO
                                            ├── transition ──▶ AGUARDANDO_SOLICITANTE
@@ -130,68 +157,62 @@ ABERTO
 AGUARDANDO_SOLICITANTE
   ├── confirm-resolution {resolved: true}  ──▶ RESOLVIDO (terminal)
   └── confirm-resolution {resolved: false} ──▶ EM_ATENDIMENTO
-Algumas regras que valem a pena ter em mente:
+```
 
-ABERTO só sai por assign, que define responsável, urgência e status de uma vez.
+Regras centrais:
 
-Só o técnico responsável altera o status operacional.
+- `ABERTO` só sai por **assign**, que define responsável + urgência + status atomicamente.
+- Apenas o **técnico responsável** altera o status operacional.
+- `resolve` exige solução com **10+ caracteres** e move para `AGUARDANDO_SOLICITANTE`.
+- Somente o **solicitante proprietário** confirma ou rejeita, e somente em `AGUARDANDO_SOLICITANTE`.
+- Confirmação positiva preenche `resolved_at`; negativa limpa a solução e mantém o técnico.
+- `RESOLVIDO` é **terminal** no MVP.
+- Toda operação válida gera evento de auditoria na mesma transação.
+- Conflitos de estado/concorrência retornam **`409 Conflict`**.
 
-resolve
- exige uma solução com pelo menos 10 caracteres e move para 
-AGUARDANDO_SOLICITANTE
-.
+---
 
-Só o solicitante proprietário confirma ou rejeita, e só em 
-AGUARDANDO_SOLICITANTE
-.
+## Perfis e permissões
 
-Confirmação positiva preenche resolved_at. Negativa limpa a solução e mantém o técnico.
+| Ação | Solicitante | Técnico responsável | Outro técnico |
+|---|---|---|---|
+| Abrir chamado | Sim | Sim | Sim |
+| Ver próprios chamados | Sim | — | — |
+| Ver fila de chamados | Não | Sim | Sim |
+| Assumir chamado `ABERTO` | Não | Sim | Sim |
+| Definir urgência na assunção | Não | Sim | Sim |
+| Mover no Kanban / alterar status | Não | Sim | Não |
+| Solicitar confirmação da resolução | Não | Sim | Não |
+| Confirmar/rejeitar a resolução | Somente o proprietário | Não | Não |
+| Comentários internos | Não | Sim | Sim |
+| Histórico de auditoria | Próprios chamados (eventos seguros) | Sim | Sim |
 
-RESOLVIDO é terminal no MVP.
+> O frontend reflete essas regras em `src/utils/ticketPermissions.js`, mas a **autorização real é sempre do backend**. Permissões de UI são conveniência de experiência.
 
-Toda operação válida gera evento de auditoria na mesma transação.
+---
 
-Conflitos de estado ou concorrência retornam 409 Conflict.
+## Modo demonstração
 
-Perfis e permissões
-Ação	Solicitante	Técnico responsável	Outro técnico
-Abrir chamado	Sim	Sim	Sim
-Ver próprios chamados	Sim	—	—
-Ver fila de chamados	Não	Sim	Sim
-Assumir chamado ABERTO	Não	Sim	Sim
-Definir urgência na assunção	Não	Sim	Sim
-Mover no Kanban / alterar status	Não	Sim	Não
-Solicitar confirmação da resolução	Não	Sim	Não
-Confirmar/rejeitar a resolução	Somente o proprietário	Não	Não
-Comentários internos	Não	Sim	Sim
-Histórico de auditoria	Próprios chamados (eventos seguros)	Sim	Sim
-O frontend reflete essas regras em src/utils/ticketPermissions.js, mas a autorização real é sempre do backend. Permissões de UI são só conveniência de experiência.
+Com `VITE_DEMO_MODE=true` no frontend:
 
-Modo demonstração
-Com VITE_DEMO_MODE
-=true
- no frontend:
+- Os serviços (`authService`, `ticketService`, etc.) delegam para `src/services/demo/demoBackend.js`.
+- Dados ficam em memória e `sessionStorage` (chaves `helpdesk.demo.db.v1` e `helpdesk.demo.session.v1`).
+- A sessão dura enquanto a aba estiver aberta; limpar o `sessionStorage` restaura os dados originais.
+- Nenhuma chamada à API real é feita.
 
-Os serviços (authService, 
-ticketService
-, etc.) delegam para src/services/demo/demoBackend
-.js
-.
+Útil para demonstrar a interface sem subir o backend, testar fluxos de UI isoladamente e desenvolver frontend sem dependência do Django.
 
-Os dados ficam em memória e em 
-sessionStorage
- (chaves helpdesk.demo.db.v1 e helpdesk.demo.session.v1).
+---
 
-A sessão dura enquanto a aba estiver aberta. Limpar o sessionStorage restaura os dados originais.
+## Documentação detalhada
 
-Nenhuma chamada à API real é feita.
+- **Frontend:** [`FrontEnd/README.md`](FrontEnd/README.md) — stack, estrutura de pastas, rotas, contrato da API, testes, acessibilidade e limitações.
+- **Backend:** [`BackEnd/README.md`](BackEnd/README.md) — arquitetura, endpoints, fluxo de status, permissões, filtros, testes e segurança.
 
-Serve para demonstrar a interface sem subir o backend, testar fluxos de UI isoladamente e desenvolver frontend sem depender do Django.
+---
 
-Documentação detalhada
-Frontend: FrontEnd/README.md — stack, estrutura de pastas, rotas, contrato da API, testes, acessibilidade e limitações.
+## Licença
 
-Backend: BackEnd/README.md — arquitetura, endpoints, fluxo de status, permissões, filtros, testes e segurança.
-
-Licença
 Projeto pessoal para fins de demonstração de competências Full Stack. Sem licença definida.
+
+
