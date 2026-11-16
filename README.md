@@ -1,3 +1,9 @@
+# Helpdesk — Sistema de Gestão de Chamados
+
+Sistema web completo de Helpdesk para abertura, acompanhamento e resolução de chamados internos, composto por um **frontend React** e um **backend Django REST Framework**. O projeto implementa o MVP completo com autenticação, perfis distintos, quadro Kanban com drag and drop, fluxo colaborativo de resolução (técnico propõe, solicitante confirma) e auditoria imutável.
+
+---
+
 ## Sumário
 
 - [Visão geral](#visão-geral)
